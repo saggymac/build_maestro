@@ -111,7 +111,7 @@ module BuildMaestro
 
     def branch ( branch_name, message )
       src = @root + "/trunk"
-      dest = @root + "/tags/#{branch_name}"
+      dest = @root + "/branches/#{branch_name}"
 
       copy src, dest, message
 

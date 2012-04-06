@@ -36,15 +36,12 @@ def set_svn_user( user, pass=nil )
     lookup = %x[ security find-generic-password -g -s svn -a #{user} 2>&1 ]
     raise "Unable to find a password for #{user}" if lookup.nil?
     
-    binding.pry
-    
     lookup.each_line do |line|
       puts line
       match = line.match( /^password: (.+)/)
       unless match.nil?
         unless match.captures.nil? || match.captures.length < 1
           password = match.captures.first
-          binding.pry
           pass = password.gsub( '\"', '')
           break
         end
