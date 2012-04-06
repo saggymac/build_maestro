@@ -27,13 +27,13 @@ end
 #
 # Set a global SVN user account to use when talking with repositories
 # Optionally, if no password is given, we will look in the local keychain
-# for a generic password matching the given account name.
+# for a generic password matching the given account name, matching service name build_maestro
 #
 def set_svn_user( user, pass=nil )
   raise "you must specify an svn user" if user.nil?
 
   if pass.nil?
-    lookup = %x[ security find-generic-password -g -s svn -a #{user} 2>&1 ]
+    lookup = %x[ security find-generic-password -g -s build_maestro -a #{user} 2>&1 ]
     raise "Unable to find a password for #{user}" if lookup.nil?
     
     lookup.each_line do |line|
