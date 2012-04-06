@@ -33,10 +33,6 @@ Might be the easiest way to understand how this works, is to see an example buil
 	#     a generic password and the given userid	
 	set_svn_user 'svnuser'
 
-    # Will automatically be tagged as build_version, and checked out to the current
-	# working directory as 'app'
-	root_project 'http://www.svnhost.com/some/project'
-
 
 	# tag work - to take any other dependency projects
 	# will automatically checkout too

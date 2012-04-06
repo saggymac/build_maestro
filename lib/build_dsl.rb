@@ -1,10 +1,9 @@
 require 'build_maestro/svn.rb'
 require 'uri'
-
+require 'pry'
 
 def reset_dsl
   $version = nil
-  $root_project = nil
   $build_name = 'anonymous'
   $dependencies = []
   $svn_user = nil
@@ -58,30 +57,100 @@ end
 
 
 # @param [String] src_root a path to the root of a SVN project that has trunk,tags,branches subdirs
-# @return nil
-def root_project (src_root)
-  $root_project = src_root
-end
-
-
-# @param [String] src_root a path to the root of a SVN project that has trunk,tags,branches subdirs
 # @param [String] tag_name the name of the tag to create using the specified src root (default is to use the svn revision)
 # @return [String] the full path to the newly created tag
-def make_tag (src_root, tag_name=nil, destination=nil)
+#
+#
+# We support two syntaxes...the previous one. And this one.
+# This one is kind of complicated.
+# 1) First, is the srcpath. This is a full URL to the source that we are tagging. However, 
+#    there are a few options. If no :tagpath is given, we'll use the srcpath and append /trunk to
+#    get the full src path URL, and then append tags/rXXXX to make the tag.
+#    If there is a :tagpath given, then we'll just do a straight svn copy from :srcpath to :tagpath.
+# 2) By default, we will checkout the code to a path in workspace identified by :dest. But if there
+#    is no :dest, we'll use the basename of the :srcpath to use as :dest.
+# 3) If :checkout => false, then no :dest is necessary
+#
+#def make_tag (src_root, tag_name=nil, destination=nil)
+def make_tag ( *args )
+  actual_tag_path = nil
+  
   msg = "making tag for #{$build_name} #{$version}"
-  svn_client = BuildMaestro::SVN.new( src_root, $svn_user, $svn_pass)
-  tag_path = svn_client.tag( tag_name, msg)
-  
-  if destination.nil?
-    uri = URI( src_root)
-    File.basename( uri.path)
-    destination = File.basename( uri.path)
+     
+
+  #
+  # This is the new 1.1.0 logic. Preferred, and it paves the way for more features
+  # in the future.
+  #
+  if args.first.instance_of?( Hash)
+    args = args.first
+    
+    srcpath = args[:srcpath]
+    raise "You must specify a :srcpath" if srcpath.nil?
+
+    tagpath = args[:tagpath]
+    if tagpath.nil?
+      svn_client = BuildMaestro::SVN.new( srcpath, $svn_user, $svn_pass)    
+      actual_tag_path = svn_client.tag( nil, msg) # will make tag using svn revision
+    else
+      svn_client = BuildMaestro::SVN.new( nil, $svn_user, $svn_pass)    
+      actual_tag_path = svn_client.copy( srcpath, tagpath, msg) 
+    end
+    
+    checkout = args[:checkout]
+    unless checkout.nil? && checkout == false
+      dest = args[:destination]
+      if dest.nil?
+        uri = URI( src_root)
+        File.basename( uri.path)
+        dest = File.basename( uri.path)
+      end
+      
+      svn_client.checkout( actual_tag_path, dest)                    
+      
+    end
+    
+
   end
+
+
   
-  svn_client.checkout( tag_path, destination )
-  
-  tag_path
+  #
+  # This is the 1.0.0 logic. deprecated.
+  #
+  if args.instance_of?( Array)
+    
+    raise "Invalid usage of make_tag" if args.nil? || args.count <= 0
+    
+    src_root = args.first
+    
+    case args.count
+    when 3
+      tag_name = args[1]
+      destination = args[2]
+    when 2
+      tag_name = args[1]
+      destination = nil
+    when 1
+      tag_name = nil
+      destination = nil        
+    end
+    
+    svn_client = BuildMaestro::SVN.new( src_root, $svn_user, $svn_pass)
+    actual_tag_path = svn_client.tag( tag_name, msg)
+
+    if destination.nil?
+      uri = URI( src_root)
+      File.basename( uri.path)
+      destination = File.basename( uri.path)
+    end
+        
+    svn_client.checkout( actual_tag_path, destination )        
+  end
+
+  actual_tag_path
 end
+
 
 
 def dependency (src_path, destination)
@@ -100,9 +169,6 @@ end
 #
 def build
   raise "You must specify a build_version" if $version.nil?
-  raise "You must specify a root_project" if $root_project.nil?
-
-  app_tag = make_tag $root_project, $version, 'app'
 
   svn_client = BuildMaestro::SVN.new( nil, $svn_user, $svn_pass)
 

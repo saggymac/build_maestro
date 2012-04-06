@@ -54,15 +54,16 @@ module BuildMaestro
 
     def copy( src, dest, message )
       
-      return if path_exists?( dest)
+      return dest if path_exists?( dest)
       
       message = 'empty' if message.nil?
       cmd = "svn copy --non-interactive --username #{@user} --password #{@pass} -m \'#{message}\' \'#{src}\' \'#{dest}\'"
+      puts "#{cmd}"
       result = %x[ #{cmd} ]
 
       raise "Error executing: svn copy" unless $?.success?
 
-      nil
+      dest
     end
 
 
