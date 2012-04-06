@@ -23,7 +23,7 @@ Might be the easiest way to understand how this works, is to see an example buil
 
 ***
 
-	build_name 'USATODAY-Enterprise'
+	build_name 'supercool-project'
 	build_version '2.0.5.0'
 	
 	# Set some global params required to access your SVN server
