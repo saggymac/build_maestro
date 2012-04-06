@@ -1,6 +1,6 @@
 require 'build_maestro/svn.rb'
 require 'uri'
-require 'pry'
+
 
 def reset_dsl
   $version = nil
