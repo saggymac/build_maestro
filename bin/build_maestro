@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+
+require 'build_dsl.rb'
+
+reset_dsl
+
+build_file = ARGV.shift
+
+process_build_spec( build_file) unless build_file.nil?
