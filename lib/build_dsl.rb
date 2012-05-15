@@ -1,6 +1,5 @@
 require 'build_maestro/svn.rb'
 require 'uri'
-require 'pry'
 
 def reset_dsl
   $version = nil
@@ -32,11 +31,19 @@ def set_svn_user( user, pass=nil )
   raise "you must specify an svn user" if user.nil?
 
   if pass.nil?
-    lookup = %x[ security find-generic-password -g -s build_maestro -a #{user} 2>&1 ]
+    # lookup = %x[ security find-generic-password -g -s build_maestro -a #{user} 2>&1 ]
+    # lookup = spawn( "security find-generic-password -g -s build_maestro -a #{user}", :err=>:out)
+
+    r,w = IO.pipe
+    pid = spawn( "security find-generic-password -g -s build_maestro -a #{user}", 
+                 {:out=>:close,:err=>w})
+    w.close
+    lookup = r.read # result should be a string, or nil
+    r.close
+
     raise "Unable to find a password for #{user}" if lookup.nil?
     
     lookup.each_line do |line|
-      puts line
       match = line.match( /^password: (.+)/)
       unless match.nil?
         unless match.captures.nil? || match.captures.length < 1
